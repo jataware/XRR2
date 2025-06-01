@@ -1,0 +1,30 @@
+[project]
+name = "jataware-ezbright"
+requires-python = ">= 3.11"
+version = "0.1.0"
+dependencies = [ "pystemmer>=3.0.0,<4", "datasets>=3.6.0,<4", "rich>=14.0.0,<15", "pytrec-eval>=0.5,<0.6"]
+
+[build-system]
+build-backend = "hatchling.build"
+requires = ["hatchling"]
+
+[tool.pixi.workspace]
+channels = ["conda-forge"]
+platforms = ["osx-arm64"]
+
+[tool.pixi.pypi-dependencies]
+jataware_ezbright = { path = ".", editable = true }
+
+[tool.pixi.tasks]
+
+[tool.pixi.dependencies]
+python = "3.12.*"
+numba = ">=0.61.2,<0.62"
+pip = ">=25.1.1,<26"
+matplotlib = ">=3.10.3,<4"
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["jataware_ezbright"]
