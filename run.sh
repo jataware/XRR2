@@ -11,7 +11,9 @@
 # --
 # Run all tasks
 
-export HF_DATASETS_OFFLINE=1
+# Good to turn this on after the first time, so that we don't keep on 
+# hitting the internet.
+# export HF_DATASETS_OFFLINE=1
 function run_task() {
     TASK=$1
     QE_MODEL=gpt-4o
