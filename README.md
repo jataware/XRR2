@@ -1,4 +1,4 @@
-# ezbright
+# XRR2
 _Expand -> Retrieve -> Rerank - simple method with strong results on BRIGHT benchmark_
 
 ---
