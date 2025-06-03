@@ -9,6 +9,7 @@
 
 import os
 import re
+import random
 import sys
 import json
 import argparse
@@ -23,7 +24,7 @@ from dspy.evaluate import Evaluate
 from utils import load_bright, compute_metrics
 from retrievers import BM25S
 
-np.random.seed(123)
+np.random.seed(55)
 
 # -
 # Data Containers
@@ -94,9 +95,21 @@ class DocumentReranker(dspy.Module):
         self.rerank = dspy.ChainOfThought(RerankingSignature)
         self.model = model
     
-    def forward(self, query: str, documents: List[Dict], topk: int = 10) -> List[int]:
+    def forward(self, query: str, documents: List[Dict], topk: int = 10, knowledge_base=None) -> List[int]:
         # Convert dict documents to Document pydantic models
-        doc_objects = [Document(id=doc['id'], doc=self.get_doc_text(doc['id'])) for doc in documents]
+        doc_objects = []
+        for doc in documents:
+            if 'doc' in doc:
+                # Document already has text
+                doc_text = doc['doc']
+            elif knowledge_base:
+                # Look up document text from knowledge base
+                doc_text = knowledge_base.get_document(doc['id'])
+            else:
+                # Fallback - use ID as text (not ideal)
+                doc_text = doc['id']
+            
+            doc_objects.append(Document(id=doc['id'], doc=doc_text))
         
         with dspy.context(lm=dspy.LM(f'{self.model}'), api_key=os.getenv("OPENAI_API_KEY" if "openai" in self.model else "GEMINI_API_KEY")):
             result = self.rerank(
@@ -118,8 +131,7 @@ class SingleQueryPipeline(dspy.Module):
     """End-to-end retrieval pipeline for a single query"""
     
     def __init__(self, 
-                 retriever_fn: Callable[[str, int, List[str]], List[Dict]],
-                 doc_lookup_fn: Callable[[str], str],
+                 knowledge_base,  # Pass the KB object instead of functions
                  qe_model: str = "openai/gpt-4o",
                  rr_model: str = "openai/gpt-4o",
                  topk0: int = 100,
@@ -131,9 +143,8 @@ class SingleQueryPipeline(dspy.Module):
         self.query_expander = QueryExpander(model=qe_model)
         self.reranker       = DocumentReranker(model=rr_model)
         
-        # Function interfaces for data access
-        self.retrieve_docs = retriever_fn  # (query, topk, excluded_ids) -> List[Dict]
-        self.get_doc_text = doc_lookup_fn  # (doc_id) -> str
+        # Store the knowledge base object instead of function references
+        self.knowledge_base = knowledge_base
         
         # Parameters
         self.topk0     = topk0
@@ -158,7 +169,8 @@ class SingleQueryPipeline(dspy.Module):
             ranked_indices = self.reranker(
                 query       = query.query,
                 documents   = hits_for_rerank,
-                topk        = self.topk1
+                topk        = self.topk1,
+                knowledge_base=self.knowledge_base
             )
             
             # Convert back to RetrievalResult format with scores
@@ -230,15 +242,15 @@ class SingleQueryPipeline(dspy.Module):
             _gt_ids=gt_ids or []
         )
                 
-        # Step 1: Raw retrieval
-        raw_hits    = self.retrieve_docs(query.query, self.topk0, query.excluded_ids)
+        # Step 1: Raw retrieval using knowledge base
+        raw_hits    = self.knowledge_base.retrieve(query.query, self.topk0, query.excluded_ids)
         raw_results = [RetrievalResult(id=hit['id'], score=hit['_score']) for hit in raw_hits]
         
         # Step 2: Query expansion
         query.query_expanded = self.query_expander(query.query)
                 
         # Step 3: Retrieval with expanded query
-        qe_hits    = self.retrieve_docs(query.query_expanded, self.topk0, query.excluded_ids)
+        qe_hits    = self.knowledge_base.retrieve(query.query_expanded, self.topk0, query.excluded_ids)
         qe_results = [RetrievalResult(id=hit['id'], score=hit['_score']) for hit in qe_hits]
                 
         # Step 4: Reranking
@@ -354,6 +366,8 @@ def main():
     print(f'[green]========== Loading {args.task}', file=sys.stderr)
     dataset = load_bright(args.task, pre_reasoning=None, long_context=False)   
     
+    random.shuffle(dataset['queries'])
+    
     queries_train = dataset['queries'][:args.n_train]
     queries_test  = dataset['queries'][args.n_train:]    
         
@@ -362,13 +376,12 @@ def main():
     
     # Initialize pipeline with function interfaces
     pipeline = SingleQueryPipeline(
-        retriever_fn  = kb.retrieve,
-        doc_lookup_fn = kb.get_document,
-        qe_model      = args.qe_model,
-        rr_model      = args.rr_model,
-        topk0         = args.topk0,
-        topk1         = args.topk1,
-        double_rr     = args.double_rr
+        knowledge_base = kb,
+        qe_model       = args.qe_model,
+        rr_model       = args.rr_model,
+        topk0          = args.topk0,
+        topk1          = args.topk1,
+        double_rr      = args.double_rr
     )
     
     # Create train and test datasets
@@ -403,14 +416,27 @@ def main():
         provide_traceback=True
     )
     
+    train_evaluator = Evaluate(
+        devset=ds_trn, 
+        num_threads=5, 
+        display_progress=True, 
+        display_table=len(ds_trn), 
+        provide_traceback=True
+    )
+    
     # 1. Evaluate unoptimized pipeline on test set
     print("\n=== Evaluating Unoptimized Pipeline on Test Set ===")
     unoptimized_score = test_evaluator(pipeline, metric=retrieval_metric)
     print(f"Unoptimized Test Set Recall@10: {unoptimized_score}")
     
+    # 2. Evaluate unoptimized pipeline on training set
+    print("\n=== Evaluating Unoptimized Pipeline on Training Set ===")
+    unoptimized_score = train_evaluator(pipeline, metric=retrieval_metric)
+    print(f"Unoptimized Training Set Recall@10: {unoptimized_score}")
+    
     # 2. Train/Optimize pipeline on training set
     print("\n=== Training Pipeline on Training Set ===")
-    optimizer = dspy.MIPROv2(metric=retrieval_metric, auto="light", num_threads=5)
+    optimizer = dspy.MIPROv2(metric=retrieval_metric, auto="medium", num_threads=5)
     optimized_pipeline = optimizer.compile(
         pipeline, 
         trainset=ds_trn, 
