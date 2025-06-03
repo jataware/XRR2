@@ -16,8 +16,8 @@ For each query:
 ## Results
 
 ### Methods
-- `rr` - Expand -> Retrieve -> Rerank topk=100
-- `rr2` - Expand -> Retrieve -> Rerank topk=100 -> Rerank topk1=10 (averaged over 5 runs)
+- `rr` - Steps 1-3 above
+- `rr2`- Steps 1-4 above
 
 ```
 ┏ ━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━┓
