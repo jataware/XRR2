@@ -4,7 +4,7 @@
 
     Query -> Expand -> Retrieve -> Rerank -> (Double Rerank)
     
-    dspy implementation of the ezbright retrieval pipeline.
+    dspy implementation of the xrr2 retrieval pipeline.
 """
 
 import os

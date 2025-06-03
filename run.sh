@@ -18,7 +18,7 @@ function run_task() {
     TASK=$1
     QE_MODEL=gpt-4o
     RR_MODEL=gemini/gemini-2.5-flash-preview-04-17
-    python -m ezbright \
+    python -m xrr2 \
         --topk0     100        \
         --qe_model  $QE_MODEL  \
         --rr_model  $RR_MODEL  \
@@ -45,4 +45,4 @@ run_task theoremqa_theorems
 # --
 # Final scoring
 
-python -m ezbright.official
+python -m xrr2.official

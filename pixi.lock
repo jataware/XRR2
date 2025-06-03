@@ -895,7 +895,7 @@ packages:
   - pytest-mypy ; extra == 'type'
   requires_python: '>=3.9'
 - pypi: ./
-  name: jataware-ezbright
+  name: xrr2
   version: 0.1.0
   sha256: 89fa5e58a7f04c19f65124917f53fdda9bb4e463675571698a4c85c0719f182f
   requires_dist:

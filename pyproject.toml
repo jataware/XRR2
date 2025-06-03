@@ -1,5 +1,5 @@
 [project]
-name = "jataware-ezbright"
+name = "jataware-xrr2"
 requires-python = ">= 3.11"
 version = "0.1.0"
 dependencies = [ "pystemmer>=3.0.0,<4", "datasets>=3.6.0,<4", "rich>=14.0.0,<15", "pytrec-eval>=0.5,<0.6", "bm25s @ https://github.com/jataware/bm25s.git", "ezprompt @ https://github.com/jataware/ezprompt.git"]
@@ -13,7 +13,7 @@ channels = ["conda-forge"]
 platforms = ["osx-arm64"]
 
 [tool.pixi.pypi-dependencies]
-jataware_ezbright = { path = ".", editable = true }
+jataware_xrr2 = { path = ".", editable = true }
 
 [tool.pixi.tasks]
 
@@ -27,4 +27,4 @@ matplotlib = ">=3.10.3,<4"
 allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
-packages = ["jataware_ezbright"]
+packages = ["jataware_xrr2"]

@@ -1,7 +1,7 @@
 """
-    ezbright.utils
+    xrr2.utils
 
-    Utility functions for ezbright.
+    Utility functions for xrr2.
 """
 
 import pytrec_eval

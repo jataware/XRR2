@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-    ezbright.__main__
+    xrr2.__main__
 
     Query -> Expand -> Retrieve -> Rerank -> (Double Rerank)
 """
@@ -43,8 +43,8 @@ def parse_args():
 
     args = parser.parse_args()
 
-    args.qe_prompt = open(f'./ezbright/prompts/{args.qe_method}_query_expander.md').read()
-    args.rr_prompt = open(f'./ezbright/prompts/{args.rr_method}_reranker.md').read()
+    args.qe_prompt = open(f'./xrr2/prompts/{args.qe_method}_query_expander.md').read()
+    args.rr_prompt = open(f'./xrr2/prompts/{args.rr_method}_reranker.md').read()
     
     if not os.path.exists(args.outdir):
         os.makedirs(args.outdir)

@@ -1,7 +1,7 @@
 """
-    ezbright.rerank
+    xrr2.rerank
     
-    Reranking functions for ezbright.
+    Reranking functions for xrr2.
 """
 
 import numpy as np

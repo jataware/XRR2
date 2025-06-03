@@ -1,7 +1,7 @@
 """
-    ezbright.official
+    xrr2.official
 
-    Official evaluation script for ezbright.
+    Official evaluation script for xrr2.
 """
 
 import json
