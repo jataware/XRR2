@@ -6,14 +6,18 @@ _Expand -> Retrieve -> Rerank -> Rerank - simple method with strong results on [
 XRR2 (eXpand -> Retrieve -> Rerank -> Rerank) is a conceptually simple pipeline, similar to pipelines described in the original BRIGHT [paper](https://arxiv.org/pdf/2407.12883).
 
 For each query:
-  - Use an LLM (gpt-4o) to __expand__ the query using [this prompt](./ezbright/prompts/v2_query_expander.md)
-  - 
+  1) __Expand:__ Use query expansion LLM (`openai/gpt-4o`) to expand the query using [this prompt](./ezbright/prompts/v2_query_expander.md)
+  2) __Retrieve:__ topk0=100 results using (modified) [BM25s](https://github.com/jataware/bm25s)
+    - Standard BM25 assumes short queries, and thus weights document vectors but does not weight the query vectors.  Since our queries are the relatively lengthy output of the LLM query expansion, we want to weight the query vectors as well.  (This is done in the original [BRIGHT bm25 implementation](https://github.com/xlang-ai/BRIGHT/blob/main/retrievers.py#L196)
+  3) __Rerank:__ Pass all topk0=100 documents from the previous step to reranking LLM (`gemini/gemini-2.5-flash-preview-04-17`).  Ask for the topk1=10 most relevant documents using [this prompt](./ezbright/prompts/v2_reranker.md)
+  4) __Rerank (again):__ Pass the topk1=10 documents from the previous step to the reranking LLM _again_.  Repeat this N=5 times and average the results.
+     - This step boosts ndcg@10, but at the time of writing we still get SOTA results even if it is omitted.
 
 ## Results
 
 ### Methods
-- `rr` - Expand -> Retrieve -> Rerank Top100
-- `rr2` - Expand -> Retrieve -> Rerank Top100 -> Rerank Top10 averaged over 5 runs
+- `rr` - Expand -> Retrieve -> Rerank topk=100
+- `rr2` - Expand -> Retrieve -> Rerank topk=100 -> Rerank topk1=10 (averaged over 5 runs)
 
 ```
 ┏ ━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━┓
@@ -39,6 +43,14 @@ For each query:
 ```
 
 ## Other Thoughts
+
+### Open Questions / Future Work
+
+_Ranking w/ LLMs:_ What is the "right" way to do this?  Pointwise, pairwise or listwise?  Tournaments, sliding window, divide-and-conquer?  Do those methods give consistent results?  How do rank most efficiently?
+
+_Prompt Optimization:_ We re-wrote the query expansion prompt from the original BRIGHT repo, but we didn't touch the reranking prompts.  Could that help?
+
+_Stability:_ Rate limits & structured outputs are annoying, and we're not handling those errors perfectly at the moment.  To successfully run this code, you might have call `xrr2/__main__.py` multiple times.  Previously successful results are cached to disk, so it runs fast, but it is definitely annoying and could be improved w/ better error handling / retrys.
 
 ### BRIGHT2.0?
 
