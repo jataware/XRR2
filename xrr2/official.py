@@ -59,7 +59,7 @@ def calculate_retrieval_metrics(results, qrels, k_values=[1, 5, 10, 25, 50, 100]
     return output
 
 if __name__ == "__main__":
-    metric_names = ["NDCG@10"]
+    metric_names = ["NDCG@10", "Recall@10"]
     key          = 'gold_ids'
     all_examples = hf_load_dataset('xlangai/bright', 'examples',cache_dir='.cache')
 

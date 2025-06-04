@@ -57,7 +57,7 @@ task     = args.task
 # --
 # IO
 
-rprint(f'[green]========== Loading {task}', file=sys.stderr)
+rprint(f'[green]+ Loading {task}', file=sys.stderr)
 dataset  = load_bright(task, pre_reasoning=None, long_context=False)
 queries  = dataset['queries']
 kb       = dataset['kb']
@@ -96,7 +96,8 @@ query_expander = EZPrompt(
         'QUERY' : query,
     },
     llm_kwargs={**llm_kwargs, "model" : args.qe_model, "max_tokens" : 2048},
-    cache_dir='./ezlogs/cache'
+    cache_dir='./ezlogs/cache',
+    no_console=True,
 )
 
 # Reranker
@@ -121,13 +122,14 @@ reranker = EZPrompt(
     },
     after=_reranker_after,
     llm_kwargs={**llm_kwargs, "model" : args.rr_model},
-    cache_dir='./ezlogs/cache'
+    # cache_dir='./ezlogs/cache',
+    no_console=True,
 )
 
 
 
 # Metrics w/ raw queries
-rprint('[green]========== Raw Retrieval', file=sys.stderr)
+rprint('[green]+ Raw Retrieval', file=sys.stderr)
 all_hits0   = do_retrieval(rt, queries, args.topk0, query_key='query')
 metrics0    = compute_metrics(results=all_hits0, gt=gt)
 metrics0_ub = compute_metrics(results=all_hits0, gt=gt, ub=True)
@@ -135,7 +137,7 @@ metrics0_ub = compute_metrics(results=all_hits0, gt=gt, ub=True)
 # --
 # Step 1: Query Expansion
 
-rprint('[green]========== Query Expansion', file=sys.stderr)
+rprint('[green]+ Query Expansion', file=sys.stderr)
 ltasks  = {qid:query_expander.larun(query=query['query']) for qid, query in enumerate(queries)}
 results = run_batch(ltasks, max_calls=128)
 for qid in results.keys():
@@ -145,7 +147,7 @@ for qid in results.keys():
 # --
 # Step 2: Retrieval
 
-rprint('[green]========== QE Retrieval', file=sys.stderr)
+rprint('[green]+ QE Retrieval', file=sys.stderr)
 all_hits_qe   = do_retrieval(rt, queries, args.topk0, query_key='query_expanded')
 metrics_qe    = compute_metrics(results=all_hits_qe, gt=gt)
 metrics_qe_ub = compute_metrics(results=all_hits_qe, gt=gt, ub=True)
@@ -153,7 +155,7 @@ metrics_qe_ub = compute_metrics(results=all_hits_qe, gt=gt, ub=True)
 # --
 # Rerank
 
-rprint('[green]========== Rerank', file=sys.stderr)
+rprint('[green]+ Rerank', file=sys.stderr)
 all_hits_rr   = rerank(reranker, kb_dict, queries, all_hits_qe, gt, topk1=args.topk1)
 metrics_rr    = compute_metrics(results=all_hits_rr, gt=gt)
 metrics_rr_ub = compute_metrics(results=all_hits_rr, gt=gt, ub=True)
@@ -162,7 +164,7 @@ metrics_rr_ub = compute_metrics(results=all_hits_rr, gt=gt, ub=True)
 # Double Rerank
 
 if args.double_rr > 0:
-    rprint('[green]========== Double Rerank', file=sys.stderr)
+    rprint('[green]+ Double Rerank', file=sys.stderr)
     # Rerank again (listwise)
     # [TODO] Try pairwise + Elo score
 
