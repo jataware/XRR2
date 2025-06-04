@@ -122,7 +122,7 @@ reranker = EZPrompt(
     },
     after=_reranker_after,
     llm_kwargs={**llm_kwargs, "model" : args.rr_model},
-    # cache_dir='./ezlogs/cache',
+    cache_dir='./ezlogs/cache',
     no_console=True,
 )
 
