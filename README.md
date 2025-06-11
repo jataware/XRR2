@@ -8,7 +8,7 @@ XRR2 (eXpand -> Retrieve -> Rerank -> Rerank) is a conceptually simple pipeline,
 For each query:
   1) __Expand:__ Use query expansion LLM (`openai/gpt-4o`) to expand the query using [this prompt](./xrr2/prompts/v2_query_expander.md)
   2) __Retrieve:__ topk0=100 results using (modified) [BM25s](https://github.com/jataware/bm25s)
-    - Standard BM25 assumes short queries, and thus weights document vectors but does not weight the query vectors.  Since our queries are the relatively lengthy output of the LLM query expansion, we want to weight the query vectors as well.  (This is done in the original [BRIGHT bm25 implementation](https://github.com/xlang-ai/BRIGHT/blob/main/retrievers.py#L196)
+    - Standard BM25 assumes short queries, and thus weights document vectors but does not weight the query vectors.  Since our queries are the relatively lengthy output of the LLM query expansion, we want to weight the query vectors as well.  (This is done in the original [BRIGHT bm25 implementation](https://github.com/xlang-ai/BRIGHT/blob/main/retrievers.py#L196))
   3) __Rerank:__ Pass all topk0=100 documents from the previous step to reranking LLM (`gemini/gemini-2.5-flash-preview-04-17`).  Ask for the topk1=10 most relevant documents using [this prompt](./xrr2/prompts/v2_reranker.md)
   4) __Rerank (again):__ Pass the topk1=10 documents from the previous step to the reranking LLM _again_.  Repeat this N=5 times and average the results.
      - This step boosts ndcg@10, but at the time of writing we still get SOTA results even if it is omitted.
