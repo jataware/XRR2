@@ -1,6 +1,10 @@
 # XRR2
 _Expand -> Retrieve -> Rerank -> Rerank - simple method with strong results on [BRIGHT](https://brightbenchmark.github.io/) benchmark_
 
+## Deprecation Note
+
+Unfortunately, `gemini/gemini-2.5-flash-preview-04-17` has been deprecated, so we cannot exactly reproduce the results below anymore.  At some point, we will re-run w/ `gemini/gemini-2.5-flash`.
+
 ## Overview
 
 XRR2 (eXpand -> Retrieve -> Rerank -> Rerank) is a conceptually simple pipeline, similar to pipelines described in the original BRIGHT [paper](https://arxiv.org/pdf/2407.12883).
